@@ -159,7 +159,10 @@ def create_event():
     form = EventForm()
     if form.validate_on_submit():
         print(form.title.data)
-
+        start_datetime = form.daterange.data.split("-")[0].rstrip()
+        end_datetime = form.daterange.data.split("-")[1].lstrip()
+        print(start_datetime) 
+        print(end_datetime) 
         
     return render_template("create.html",form=form)    
 

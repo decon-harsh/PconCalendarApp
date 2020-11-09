@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
-from wtforms import StringField,PasswordField,SubmitField,BooleanField,TextAreaField,MultipleFileField,DateTimeField
+from wtforms import StringField,PasswordField,SubmitField,BooleanField,TextAreaField,MultipleFileField,DateTimeField,FieldList
 from wtforms.validators import DataRequired,Length,Email,EqualTo,ValidationError
 import random
 
@@ -36,7 +36,7 @@ import random
 
 class EventForm(FlaskForm):
     title = StringField("Title",validators=[DataRequired(),Length(min=2,max=20)])
-    start = DateTimeField("Start Date and Time (yyyy-mm-dd hour:min:sec)", format ='%Y-%m-%d %H:%M:%S')
-    end = DateTimeField("End Date and Time (yyyy-mm-dd hour:min:sec)", format ='%Y-%m-%d %H:%M:%S')
-    # RRule = TextAreaField("Strict Recurrence Rule")
+    daterange = StringField("Start & End DateTime")
+    group = FieldList(StringField("Enter the email id of group members(seperated bt commas)"))
+    RRule = TextAreaField("Strict Recurrence Rule")
     submit=SubmitField('Create Event')
