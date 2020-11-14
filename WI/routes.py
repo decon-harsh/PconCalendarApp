@@ -29,140 +29,184 @@ def logout():
 @app.route("/", methods=["GET", "POST"])
 def home():
 
-    SCOPES = ["https://www.googleapis.com/auth/calendar"]
+    try:
+        SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
-    creds_data = session.get('mycred',None)
-    if creds_data:
-        creds = Credentials(creds_data['token'])
-    else:
-        creds=None        
-
-    # If there are no (valid) credentials available, let the user log in else pass next.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+        creds_data = session.get('mycred',None)
+        if creds_data:
+            creds = Credentials(creds_data['token'])
         else:
-            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
-            creds = flow.run_local_server(port=0)
-            creds_data = {
-                'token': creds.token,
-                'refresh_token': creds.refresh_token,
-                'token_uri': creds.token_uri,
-                'client_id': creds.client_id,
-                'client_secret': creds.client_secret,
-                'scopes': creds.scopes
-            }
-            # Saving the credentials in browser memory
-            session['mycred']=creds_data
+            creds=None        
 
-    service = build("calendar", "v3", credentials=creds)
-
-    # getting all events (needs to make it asynch in future) 
-    events_result = (
-        service.events()
-        .list(
-            calendarId="primary",
-            singleEvents=True,
-            orderBy="startTime",
-        )
-        .execute()
-    )
-    events = events_result.get("items", [])
-
-    result = []
-    for event in events:
-        try:
-            result.append(
-                {
-                    "title": event["summary"],
-                    "start": event["start"]["dateTime"],
-                    "end": event["end"]["dateTime"],
+        # If there are no (valid) credentials available, let the user log in else pass next.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+                creds = flow.run_local_server(port=0)
+                creds_data = {
+                    'token': creds.token,
+                    'refresh_token': creds.refresh_token,
+                    'token_uri': creds.token_uri,
+                    'client_id': creds.client_id,
+                    'client_secret': creds.client_secret,
+                    'scopes': creds.scopes
                 }
+                # Saving the credentials in browser memory
+                session['mycred']=creds_data
+
+        service = build("calendar", "v3", credentials=creds)
+
+        # getting all events (needs to make it asynch in future) 
+        events_result = (
+            service.events()
+            .list(
+                calendarId="primary",
+                singleEvents=True,
+                orderBy="startTime",
             )
-        except:
-            pass
+            .execute()
+        )
+        events = events_result.get("items", [])
 
-    result = result if len(result) > 0 else [] 
+        result = []
+        for event in events:
+            try:
+                grouplist=[x['email'] for x in event['attendees']]
+            except:
+                grouplist =[]
+            try:
+                result.append(
+                    {
+                        "title": event['summary'],
+                        "start": event["start"]["dateTime"],
+                        "end": event["end"]["dateTime"],
+                        'extendedProps':[i for i in grouplist],
+                    }
+                )
+            except:
+                pass
 
-    return render_template("main.html", data=json.dumps(result))
+        result = result if len(result) > 0 else [] 
 
+        return render_template("main.html", data=json.dumps(result))
+    except:
+        return redirect(url_for("logout"))
 
 @app.route("/create", methods=["GET", "POST"])
+
 def create_event():
 
-    SCOPES = ["https://www.googleapis.com/auth/calendar"]
+    try:
+        SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
-    creds_data = session.get('mycred',None)
-    if creds_data:
-        creds = Credentials(creds_data['token']) 
-    else:
-        creds = None      
-
-    # If there are no (valid) credentials available, let the user log in else pass next.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+        creds_data = session.get('mycred',None)
+        if creds_data:
+            creds = Credentials(creds_data['token']) 
         else:
-            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
-            creds = flow.run_local_server(port=0)
-            creds_data = {
-                'token': creds.token,
-                'refresh_token': creds.refresh_token,
-                'token_uri': creds.token_uri,
-                'client_id': creds.client_id,
-                'client_secret': creds.client_secret,
-                'scopes': creds.scopes
-            }
-            # Saving the credentials
-            session['mycred']=creds_data
+            creds = None      
 
-    def createEventMeet(summary,start_datetime,end_datetime,**kwargs):
-
-        attendees_email=kwargs.get('attendees_email',[])
-
-        meet_id=uuid4().hex
-
-        add_event= {
-            "summary": summary,
-            "location": kwargs.get('location','Not specified'),
-            "description": kwargs.get('description','Not specified'),
-            "start": {
-                "dateTime": start_datetime,
-                "timeZone": "Asia/Kolkata",
-            },
-            "end": {
-                "dateTime": end_datetime,
-                "timeZone": "Asia/Kolkata",
-            },
-            "attendees": [{"email": x} for x in attendees_email],
-            "conferenceData": {
-                "createRequest": {
-                    "requestId": f"{meet_id}",
-                    "conferenceSolutionKey": {"type": "hangoutsMeet"}
+        # If there are no (valid) credentials available, let the user log in else pass next.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+                creds = flow.run_local_server(port=0)
+                creds_data = {
+                    'token': creds.token,
+                    'refresh_token': creds.refresh_token,
+                    'token_uri': creds.token_uri,
+                    'client_id': creds.client_id,
+                    'client_secret': creds.client_secret,
+                    'scopes': creds.scopes
                 }
-            },
-            "recurrence":[
-                "RRULE:{}".format(str(kwargs.get('RRULE','FREQ=DAILY;INTERVAL=1;COUNT=1')))
-            ],
-            "reminders": {
-                "useDefault": False,
-                "overrides": [
-                    {"method": "email", "minutes": 24 * 60},
-                    {"method": "popup", "minutes": 10},
-                ],
-            },
-        }
-        event = service.events().insert(calendarId='primary', body=add_event).execute()
-        return("Success")
+                # Saving the credentials
+                session['mycred']=creds_data
 
-    
-    form = EventForm()
-    if form.validate_on_submit():
-        print(form.title.data)
-        start_datetime = form.daterange.data.split("-")[0].rstrip()
-        end_datetime = form.daterange.data.split("-")[1].lstrip()
-        print(start_datetime) 
-        print(end_datetime) 
+        def createEvent(summary,start_datetime,end_datetime,**kwargs):
+
+            attendees_email=kwargs.get('attendees_email',[])
+
+            if kwargs.get('meetOption',"Not Clicked") == "Clicked":
+                    
+                meet_id=uuid4().hex
+
+                add_event= {
+                    "summary": summary,
+                    "location": kwargs.get('location','Not specified'),
+                    "description": f"{meet_id}",
+                    "start": {
+                        "dateTime": start_datetime,
+                        "timeZone": "Asia/Kolkata",
+                    },
+                    "end": {
+                        "dateTime": end_datetime,
+                        "timeZone": "Asia/Kolkata",
+                    },
+                    "attendees": [{"email": x} for x in attendees_email],
+                    "conferenceData": {
+                        "createRequest": {
+                            "requestId": f"{meet_id}",
+                            "conferenceSolutionKey": {"type": "hangoutsMeet"}
+                        }
+                    },
+                    "recurrence":[
+                        "RRULE:{}".format(str(kwargs.get('RRULE','FREQ=DAILY;INTERVAL=1;COUNT=1')))
+                    ],
+                    "reminders": {
+                        "useDefault": False,
+                        "overrides": [
+                            {"method": "email", "minutes": 24 * 60},
+                            {"method": "popup", "minutes": 10},
+                        ],
+                    },
+                }
+
+            else:
+                add_event= {
+                    "summary": summary,
+                    "location": kwargs.get('location','Not specified'),
+                    "description": kwargs.get('description','Not specified'),
+                    "start": {
+                        "dateTime": start_datetime,
+                        "timeZone": "Asia/Kolkata",
+                    },
+                    "end": {
+                        "dateTime": end_datetime,
+                        "timeZone": "Asia/Kolkata",
+                    },
+                    "attendees": [{"email": x} for x in attendees_email],
+                    "recurrence":[
+                        "RRULE:{}".format(str(kwargs.get('RRULE','FREQ=DAILY;INTERVAL=1;COUNT=1')))
+                    ],
+                    "reminders": {
+                        "useDefault": False,
+                        "overrides": [
+                            {"method": "email", "minutes": 24 * 60},
+                            {"method": "popup", "minutes": 10},
+                        ],
+                    },
+                }
+
+            service = build("calendar", "v3", credentials=creds)
+            event = service.events().insert(calendarId='primary', body=add_event).execute()
+            return("Success")
+
         
-    return render_template("create.html",form=form)    
+        form = EventForm()
+        if form.validate_on_submit():
+            title = form.title.data
+            grouplist= list(map(str,(form.group.data).split(" ")))
+            start_datetime = form.daterange.data.split("-")[0].rstrip()
+            end_datetime = form.daterange.data.split("-")[1].lstrip()
+            start_datetime = datetime.datetime.strptime(start_datetime,'%d/%m/%Y %H:%M').isoformat() # 'Z' indicates UTC time
+            end_datetime = datetime.datetime.strptime(end_datetime,'%d/%m/%Y %H:%M').isoformat() # 'Z' indicates UTC time
+            createEvent(title,start_datetime,end_datetime,attendees_email=grouplist)
+            flash("Event created successfully",'success')
+            
+        return render_template("create.html",form=form)    
 
+    except:
+        return redirect(url_for("logout"))

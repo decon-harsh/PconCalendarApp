@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     today = yyyy + '-' + mm + '-' + dd;
     var calendar = new FullCalendar.Calendar(calendarEl, {
+
         initialView: 'dayGridMonth',
         initialDate: today,
         headerToolbar: {
@@ -15,6 +16,25 @@ document.addEventListener('DOMContentLoaded', function () {
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
         events: window.value,
+
+        eventClick: function (info) {
+            var groupmembers=[];
+            var i;
+            for(i=0;i<Object.keys(info.event.extendedProps).length;i++)
+            {
+                groupmembers.push((info.event.extendedProps[i.toString()]).toString());
+            }
+            if (groupmembers.length>0){
+                alert("-> Title of this event is : " + info.event.title +"\n-> StartDate : " + info.event.start + "\n-> EndDate : " + info.event.end + "\n-> Group members are: \n"+ groupmembers.join("\n"));
+            }
+            else{
+                alert("No group members");
+            }
+
+
+            // console.log(Object.keys(info.event.extendedProps).length);
+        }
+
     });
     calendar.render();
 });
